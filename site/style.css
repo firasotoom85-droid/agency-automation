@@ -1,0 +1,136 @@
+/* Shared by both language versions. Uses logical properties so RTL and LTR
+   mirror correctly from one stylesheet instead of two drifting copies. */
+
+:root {
+  --fg: #16181d;
+  --muted: #5c6370;
+  --line: #e4e7ec;
+  --bg: #ffffff;
+  --alt-bg: #f7f8fa;
+  --accent: #0f5c3f;
+  --accent-ink: #ffffff;
+  --radius: 10px;
+  --maxw: 1080px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fg: #e8eaed; --muted: #9aa2ae; --line: #2a2e36;
+    --bg: #14161a; --alt-bg: #1b1e24; --accent: #2ea36b; --accent-ink: #08130d;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        "Noto Naskh Arabic", "Segoe UI Arabic", Tahoma, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap { max-width: var(--maxw); margin-inline: auto; padding-inline: 24px; }
+
+/* Nav ------------------------------------------------------------------ */
+.nav {
+  position: sticky; top: 0; z-index: 10;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(8px);
+  border-block-end: 1px solid var(--line);
+}
+.nav .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 60px; flex-wrap: wrap; }
+.brand { font-weight: 650; letter-spacing: -0.01em; }
+.nav nav { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+.nav a { color: var(--muted); text-decoration: none; font-size: 0.92rem; }
+.nav a:hover { color: var(--fg); }
+.nav .lang { border: 1px solid var(--line); border-radius: 999px; padding: 3px 12px; }
+.nav .lang:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Hero ----------------------------------------------------------------- */
+.hero { padding-block: clamp(48px, 8vw, 96px); }
+h1 {
+  font-size: clamp(1.9rem, 5vw, 3rem);
+  line-height: 1.15; letter-spacing: -0.025em;
+  margin: 0 0 20px; text-wrap: balance;
+}
+.lede { font-size: 1.08rem; color: var(--muted); max-width: 58ch; margin: 0 0 14px; }
+.cta { display: flex; gap: 12px; flex-wrap: wrap; margin-block: 28px 16px; }
+
+.btn {
+  display: inline-block;
+  background: var(--accent); color: var(--accent-ink);
+  padding: 12px 22px; border-radius: var(--radius);
+  text-decoration: none; font-weight: 600; font-size: 0.98rem;
+  border: 1px solid transparent;
+}
+.btn:hover { filter: brightness(1.08); }
+.btn.ghost { background: transparent; color: var(--fg); border-color: var(--line); }
+.btn.ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+.fine { font-size: 0.85rem; color: var(--muted); max-width: 62ch; }
+.sub { color: var(--muted); max-width: 62ch; }
+
+/* Bands ---------------------------------------------------------------- */
+.band { padding-block: clamp(40px, 6vw, 72px); border-block-start: 1px solid var(--line); }
+.band.alt { background: var(--alt-bg); }
+.band h2 { font-size: clamp(1.4rem, 3vw, 1.9rem); letter-spacing: -0.02em; margin: 0 0 10px; }
+
+.grid-3 { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); margin-block-start: 28px; }
+
+.card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 22px;
+}
+.band.alt .card { background: var(--bg); }
+.card h3 { margin: 0 0 8px; font-size: 1.05rem; letter-spacing: -0.01em; }
+.card p { margin: 0; color: var(--muted); font-size: 0.95rem; }
+
+.step {
+  display: inline-grid; place-items: center;
+  inline-size: 26px; block-size: 26px; border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent); font-weight: 700; font-size: 0.85rem;
+  margin-block-end: 10px;
+}
+
+code {
+  display: inline-block; margin-block-start: 12px;
+  font-size: 0.78rem; color: var(--muted);
+  background: var(--alt-bg); border: 1px solid var(--line);
+  padding: 3px 8px; border-radius: 6px;
+  /* Workflow names are LTR even inside an RTL page. */
+  direction: ltr; unicode-bidi: embed;
+}
+
+/* Pricing -------------------------------------------------------------- */
+.price h3 { color: var(--muted); font-weight: 600; }
+.amount { font-size: 1.9rem; font-weight: 700; letter-spacing: -0.02em; margin-block: 6px 14px; }
+.amount span { font-size: 0.9rem; font-weight: 400; color: var(--muted); }
+.price ul { margin: 0; padding-inline-start: 1.1em; color: var(--muted); font-size: 0.93rem; }
+.price li { margin-block: 5px; }
+.featured { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.featured .amount { color: var(--accent); }
+
+/* FAQ ------------------------------------------------------------------ */
+details {
+  border-block-end: 1px solid var(--line);
+  padding-block: 14px;
+}
+summary { cursor: pointer; font-weight: 600; list-style: none; }
+summary::-webkit-details-marker { display: none; }
+summary::before { content: "▸ "; color: var(--accent); }
+details[open] summary::before { content: "▾ "; }
+details p { margin: 10px 0 0; color: var(--muted); max-width: 66ch; }
+
+/* Contact / footer ----------------------------------------------------- */
+.contact { text-align: center; }
+.contact .lede, .contact p { margin-inline: auto; }
+footer { border-block-start: 1px solid var(--line); padding-block: 26px; color: var(--muted); font-size: 0.88rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}

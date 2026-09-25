@@ -1,0 +1,193 @@
+{
+  "name": "demo-01-instant-lead-response",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead",
+        "responseMode": "lastNode",
+        "responseData": "allEntries",
+        "options": {}
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -360
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "has-email",
+              "leftValue": "={{ $json.body.email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "Validate Lead",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        0,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Score on the signals an agent can act on: budget, timeline, pre-approval.\n// Weights sum to exactly 100 so the priority bands below mean what they say.\n// A score outside 0-100 breaks the \"top 7% of leads\" framing we show clients.\nconst leads = [];\nfor (const item of $input.all()) {\n  const b = item.json.body || {};\n  const budget = Number(b.budget) || 0;\n  const timelineDays = Number(b.timelineDays) || 999;\n\n  let score = 0;\n  if (budget >= 1_000_000) score += 35;\n  else if (budget >= 500_000) score += 20;\n  else score += 8;\n\n  if (timelineDays <= 30) score += 25;\n  else if (timelineDays <= 90) score += 12;\n\n  if (b.preApproved === true || b.preApproved === 'true') score += 25;\n  if (b.phone) score += 15;\n\n  score = Math.min(100, score);\n  const priority = score >= 70 ? 'hot' : score >= 45 ? 'warm' : 'cold';\n\n  leads.push({ json: { ...item.json, lead: { ...b, score, priority } } });\n}\nreturn leads;"
+      },
+      "name": "Score Lead",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        0,
+        120
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "typeValidation": "loose"
+                },
+                "conditions": [
+                  {
+                    "id": "is-hot",
+                    "leftValue": "={{ $json.lead.priority }}",
+                    "rightValue": "hot",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Hot"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "typeValidation": "loose"
+                },
+                "conditions": [
+                  {
+                    "id": "is-warm",
+                    "leftValue": "={{ $json.lead.priority }}",
+                    "rightValue": "warm",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Warm"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "name": "Route by Priority",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        0,
+        360
+      ]
+    },
+    {
+      "parameters": {},
+      "name": "Notify Agent (placeholder)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        0,
+        600
+      ],
+      "notes": "REPLACE WITH DELIVERY: WhatsApp Business API, SMS via Twilio, or the agency CRM. The reply must go out in under 5 minutes to beat the response-time advantage."
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Lead": {
+      "main": [
+        [
+          {
+            "node": "Score Lead",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Score Lead": {
+      "main": [
+        [
+          {
+            "node": "Route by Priority",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Priority": {
+      "main": [
+        [
+          {
+            "node": "Notify Agent (placeholder)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "demo-1",
+  "meta": {
+    "instanceId": "demo"
+  },
+  "tags": [],
+  "pinData": {}
+}

@@ -1,0 +1,101 @@
+{
+  "name": "demo-02-missed-enquiry-followup",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "enquiry",
+        "responseMode": "lastNode",
+        "responseData": "allEntries",
+        "options": {}
+      },
+      "name": "Enquiry Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -360
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Sequence: 5 min -> 1 hour -> 4 hours -> next morning. Stops on reply.\nconst CADENCES_MIN = [5, 60, 240];\nconst out = [];\n\nfor (const item of $input.all()) {\n  const b = item.json.body || {};\n  const now = Date.now();\n\n  for (const minutes of CADENCES_MIN) {\n    out.push({\n      json: {\n        channel: b.channel || 'whatsapp',\n        to: b.phone || b.to,\n        name: b.name || 'there',\n        step: minutes,\n        sendAt: new Date(now + minutes * 60_000).toISOString(),\n        // Cancel condition: if the prospect replied, stop the sequence.\n        cancelIf: `replyFrom:${b.phone || b.to} received before ${new Date(now + minutes * 60_000).toISOString()}`,\n        messageAr: `مرحبًا ${b.name || ''}، شكرًا لتواصلك معنا. هل ما زلت تبحث عن عقار؟`,\n        messageEn: `Hi ${b.name || 'there'}, thanks for reaching out. Are you still looking?`,\n      },\n    });\n  }\n}\nreturn out;"
+      },
+      "name": "Build Follow-up Schedule",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "amount": 5,
+        "unit": "seconds"
+      },
+      "name": "Wait (demo: short)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        0,
+        120
+      ]
+    },
+    {
+      "parameters": {},
+      "name": "Log Scheduled Message",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        0,
+        360
+      ],
+      "notes": "REPLACE WITH DELIVERY: WhatsApp Business API template message, or SMS. The cancelIf condition must be enforced by the channel, not by us, or the prospect gets four messages after replying."
+    }
+  ],
+  "connections": {
+    "Enquiry Webhook": {
+      "main": [
+        [
+          {
+            "node": "Build Follow-up Schedule",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Follow-up Schedule": {
+      "main": [
+        [
+          {
+            "node": "Wait (demo: short)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait (demo: short)": {
+      "main": [
+        [
+          {
+            "node": "Log Scheduled Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "demo-1",
+  "meta": {
+    "instanceId": "demo"
+  },
+  "tags": [],
+  "pinData": {}
+}

@@ -1,0 +1,77 @@
+{
+  "name": "demo-03-viewing-confirmation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "booking",
+        "responseMode": "lastNode",
+        "responseData": "allEntries",
+        "options": {}
+      },
+      "name": "Booking Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -360
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Reminder ladder before the viewing time. Each one is cancellable.\nconst out = [];\nfor (const item of $input.all()) {\n  const b = item.json.body || {};\n  const viewingAt = new Date(b.viewingAt);\n  if (Number.isNaN(viewingAt.getTime())) {\n    out.push({ json: { error: 'viewingAt is missing or invalid', body: b } });\n    continue;\n  }\n\n  // 24h before, and 2h before.\n  for (const hoursBefore of [24, 2]) {\n    const sendAt = new Date(viewingAt.getTime() - hoursBefore * 3600_000);\n    out.push({\n      json: {\n        to: b.phone,\n        name: b.name,\n        property: b.property,\n        viewingAt: viewingAt.toISOString(),\n        hoursBefore,\n        sendAt: sendAt.toISOString(),\n        requiresCancel: true,\n        messageAr: `تذكير: موعدك لزيارة ${b.property} غدًا. للتأكيد رد بكلمة نعم، للإلغاء رد بكلمة إلغاء.`,\n        messageEn: `Reminder: your viewing of ${b.property} is coming up. Reply YES to confirm, CANCEL to reschedule.`,\n      },\n    });\n  }\n}\nreturn out;"
+      },
+      "name": "Build Reminders",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -120
+      ]
+    },
+    {
+      "parameters": {},
+      "name": "Send Reminder (placeholder)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        0,
+        120
+      ],
+      "notes": "REPLACE WITH DELIVERY: WhatsApp or SMS. Track replies so a confirmed viewing suppresses the second reminder."
+    }
+  ],
+  "connections": {
+    "Booking Webhook": {
+      "main": [
+        [
+          {
+            "node": "Build Reminders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Reminders": {
+      "main": [
+        [
+          {
+            "node": "Send Reminder (placeholder)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "demo-1",
+  "meta": {
+    "instanceId": "demo"
+  },
+  "tags": [],
+  "pinData": {}
+}
